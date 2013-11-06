@@ -61,10 +61,10 @@
 					vehicle.setSteering( input.steering, 1 );
 
 					if ( input.power === true ) {
-						vehicle.applyEngineForce( 300 );
+						vehicle.applyEngineForce( 50 );
 					} else if ( input.power === false ) {
-						vehicle.setBrake( 20, 2 );
-						vehicle.setBrake( 20, 3 );
+						//vehicle.setBrake( 20, 2 );
+						//vehicle.setBrake( 20, 3 );
 					} else {
 						vehicle.applyEngineForce( 0 );
 					}
@@ -142,7 +142,7 @@
 		ground.receiveShadow = true;
 		scene.add( ground );
 
-		for ( i = 0; i < 50; i++ ) {
+		for ( i = 0; i < 3; i++ ) {
 			var size = Math.random() * 2 + .5;
 			var box = new Physijs.BoxMesh(
 				new THREE.CubeGeometry( size, size, size ),
@@ -160,9 +160,9 @@
 
 		var loader = new THREE.JSONLoader();
 
-		loader.load( "models/mustang.js", function( car, car_materials ) {
+		loader.load( "models/ship.js", function( car, car_materials ) {
 			loader.load( "models/mustang_wheel.js", function( wheel, wheel_materials ) {
-				var mesh = new Physijs.BoxMesh(
+				var mesh = new Physijs.ConvexMesh(
 					car,
 					new THREE.MeshFaceMaterial( car_materials )
 				);
@@ -170,12 +170,12 @@
 				mesh.castShadow = mesh.receiveShadow = true;
 
 				vehicle = new Physijs.Vehicle(mesh, new Physijs.VehicleTuning(
-					10.88,
-					1.83,
-					0.28,
-					500,
-					10.5,
-					6000
+					10.88,	// suspension stifness
+					1.83,	// suspension compression
+					0.28,	// suspension dampening
+					500,	// max suspension travel
+					10.5,	// friction slip
+					6000	// max suspension force
 				));
 				scene.add( vehicle );
 
@@ -267,10 +267,6 @@
 </head>
 
 <body>
-	<div id="heading">
-		<h1>Vehicle System</h1>
-		<p>Use arrow keys to drive | model by <a href="http://www.blendswap.com/blends/author/ludwig/">ludwig</a></p>
-	</div>
 	<div id="viewport"></div>
 </body>
 

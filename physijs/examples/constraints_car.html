@@ -60,7 +60,7 @@
 			1,
 			1000
 		);
-		camera.position.set( 60, 50, 60 );
+		camera.position.set( 90, 80, 90 );
 		camera.lookAt( scene.position );
 		scene.add( camera );
 		
@@ -91,12 +91,13 @@
 		
 		// Ground
 		ground = new Physijs.BoxMesh(
-			new THREE.CubeGeometry(100, 1, 100),
+			new THREE.CubeGeometry(500, 1, 500),
 			ground_material,
 			0 // mass
 		);
 		ground.receiveShadow = true;
 		scene.add( ground );
+
 		
 		
 		// Car

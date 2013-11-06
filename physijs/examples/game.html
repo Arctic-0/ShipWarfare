@@ -20,7 +20,7 @@
 	
 	var initScene, render, applyForce, setMousePosition, mouse_position, limit,
 		ground_material, box_material,
-		projector, renderer, render_stats, physics_stats, scene, ground, light, camera, box, boxes = [], updown, leftright;
+		projector, renderer, render_stats, physics_stats, scene, ground, light, camera, box, box2, boxes = [], updown, leftright;
 	
 	initScene = function() {
 		projector = new THREE.Projector;
@@ -91,7 +91,7 @@
 		
 		box_material = Physijs.createMaterial(
 			new THREE.MeshLambertMaterial({ color: 0x4c1010 }),
-			.4, // low friction
+			.7, // low friction
 			.5 // high restitution
 		);
 		//box_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
@@ -99,7 +99,7 @@
 		
 		// Ground
 		ground = new Physijs.BoxMesh(
-			new THREE.CubeGeometry(100, 1, 100),
+			new THREE.CubeGeometry(400, 1, 400),
 			ground_material,
 			0 // mass
 		);
@@ -107,13 +107,28 @@
 		scene.add( ground );
 		
 		
+		// Player 1
 		box = new Physijs.BoxMesh(
 			new THREE.CubeGeometry( 6, 2, 4 ),
 			box_material
 		);
 		
+		box.position.y = 1.5;
 		box.castShadow = true;
 		scene.add( box );
+
+		// Player 2
+		box2 = new Physijs.BoxMesh(
+			new THREE.CubeGeometry( 6, 2, 4 ),
+			box_material
+		);
+
+		box2.position.y = 1.5;
+		box2.position.z = 10;
+
+		box2.castShadow = true;
+		scene.add( box2 );
+
 			
 
 		// EVENT LISTENERS
@@ -210,21 +225,34 @@
 	
 	applyForce = function() {
 		if(updown == 1) {
-			var vector = new THREE.Vector4;
-			vector.set(500,0,0);
 
-			//x' = cos(a) * x - sin(a) * y
-			//y' = sin(a) * x + cos(a) * y
-			//radians = degrees * (pi/180)
-			var alpha = box.rotation.y;
-			vector.x = Math.cos(alpha) * vector.x - Math.sin(alpha) * vector.z;
-			vector.z = Math.sin(alpha) * vector.x + Math.cos(alpha) * vector.z;
+			// Vector that points in the direction of the applied force
+			var vector = new THREE.Vector3(500,0,0);
 
-			console.log(vector.x + "," + vector.z + "rot.y:" + box.rotation.y);
+			// Get the rotation matrix of the ship
+			var rotation_matrix = new THREE.Matrix4().extractRotation(box.matrix);
+			// Rotate the vector in the direction of the ship, using the ship's matrix
+			vector.applyMatrix4(rotation_matrix);
 
-			//var rotYMat = new THREE.Matrix4;
-			//rotYMat.makeRotationY(box.rotation.y);
-			//vector.applyMatrix4(rotYMat);
+			console.log(vector.x + " ," + vector.z + " || rot.y:" + box.rotation.y);
+
+			// Apply force in the direction of the rotated vector(ship's local forward -> +X)
+			//	amount is controlled by the magnitude of the vector
+			box.applyCentralForce( vector );
+
+		} else if(updown == -1) {
+			// Vector that points in the direction of the applied force
+			var vector = new THREE.Vector3(-500,0,0);
+
+			// Get the rotation matrix of the ship
+			var rotation_matrix = new THREE.Matrix4().extractRotation(box.matrix);
+			// Rotate the vector in the direction of the ship, using the ship's matrix
+			vector.applyMatrix4(rotation_matrix);
+
+			console.log(vector.x + " ," + vector.z + " || rot.y:" + box.rotation.y);
+
+			// Apply force in the direction of the rotated vector(ship's local backwards -> -X)
+			//	amount is controlled by the magnitude of the vector
 			box.applyCentralForce( vector );
 		}
 
@@ -240,7 +268,8 @@
 			);*/
 
 			// maybe add multiplication by forward velocity, so it turns faster at speed
-			box.setAngularVelocity(new THREE.Vector3(0,0.5,0));
+			box.setAngularVelocity(new THREE.Vector3(0,1,0));
+			
 
 		} else if(leftright == -1) {
 			/*box.applyImpulse(
@@ -248,10 +277,28 @@
                 box.matrix.multiplyVector3(new THREE.Vector3(0, 0, -1))
 			);*/
 			
-			box.setAngularVelocity(new THREE.Vector3(0,-0.5,0));
+			box.setAngularVelocity(new THREE.Vector3(0,-1,0));
 		}
 
+		//if(leftright != 0){
+			var vel = box.getLinearVelocity();
+			var mag = vel.length();
+			var velX = new THREE.Vector3(mag,0,0);
+			var rotation_matrix = new THREE.Matrix4().extractRotation(box.matrix);
+			// Rotate the vector in the direction of the ship, using the ship's matrix
+			velX.applyMatrix4(rotation_matrix);
+			box.setLinearVelocity(velX);
 
+			vel = box2.getLinearVelocity();
+			mag = vel.length();
+			velX = new THREE.Vector3(mag,0,0);
+			rotation_matrix = new THREE.Matrix4().extractRotation(box2.matrix);
+			// Rotate the vector in the direction of the ship, using the ship's matrix
+			velX.applyMatrix4(rotation_matrix);
+			box2.setLinearVelocity(velX);
+		//}
+
+		
 
 	};
 
