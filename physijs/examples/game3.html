@@ -139,9 +139,10 @@
 
 		// "Water"
 		var water = new THREE.PlaneGeometry( 500, 500, 10, 10 );
-		var wmesh = new THREE.Mesh( water, new THREE.MeshBasicMaterial({color: 0x5555dd}) );		
+		var wmesh = new THREE.Mesh( water, new THREE.MeshLambertMaterial({color: 0x5555dd}) );		
 		wmesh.rotation.x = -Math.PI/2;
 		wmesh.position.set( 0, 3, 0 );
+		wmesh.recieveShadow = true;
 		scene.add( wmesh );
 
 
