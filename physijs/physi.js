@@ -1342,7 +1342,6 @@ window.Physijs = (function() {
 	};
 	Physijs.Vehicle.prototype.addWheel = function( wheel_geometry, wheel_material, connection_point, wheel_direction, wheel_axle, suspension_rest_length, wheel_radius, is_front_wheel, tuning ) {
 		var wheel = new THREE.Mesh( wheel_geometry, wheel_material );
-		wheel.castShadow = wheel.receiveShadow = true;
 		wheel.position.copy( wheel_direction ).multiplyScalar( suspension_rest_length / 100 ).add( connection_point );
 		this.world.add( wheel );
 		this.wheels.push( wheel );

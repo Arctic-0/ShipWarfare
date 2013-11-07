@@ -3,7 +3,7 @@
 <html>
 
 <head>
-	<title>Rigid body - Physijs</title>
+	<title>ShipWarfare</title>
 	
 	<link rel="stylesheet" type="text/css" href="css/styles.css" />
 	
@@ -23,6 +23,17 @@
 		ground_material, box_material,
 		projector, renderer, render_stats, physics_stats, scene, ground, light, camera,
 			vehicle_body, vehicle;
+
+
+	// Vehicle handling parameters
+	var turnDeltaFactor = 50;
+	var maxTurnAngle = 0.5;
+	var maxVelocity = 15.0;
+	var brakeTurnFactor = 0.5;
+
+	// Functions
+	var limitVelocity;
+
 	
 	initScene = function() {
 		projector = new THREE.Projector;
@@ -51,30 +62,87 @@
 			'update',
 			function() {
 
+				// Update vehicle 
 				if ( input && vehicle ) {
-					if ( input.direction !== null ) {
-						input.steering += input.direction / 50;
-						if ( input.steering < -.6 ) input.steering = -.6;
-						if ( input.steering > .6 ) input.steering = .6;
-					}
-					vehicle.setSteering( input.steering, 0 );
-					vehicle.setSteering( input.steering, 1 );
 
+					// Handle the vehicle steering
+					if ( input.direction !== null ) {
+						input.steering += input.direction / turnDeltaFactor;
+						if ( input.steering < -maxTurnAngle ) input.steering = -maxTurnAngle;
+						if ( input.steering > maxTurnAngle ) input.steering = maxTurnAngle;
+
+					} else {
+						if ( input.steering > 1/turnDeltaFactor ) input.steering -= 1/turnDeltaFactor;
+						else if ( input.steering < 1/turnDeltaFactor ) input.steering += 1/turnDeltaFactor;
+						else input.steering = 0;
+					}
+					// Apply the steering to the back wheels
+					vehicle.setSteering( input.steering, 2 );
+					vehicle.setSteering( input.steering, 3 );
+
+					// Handle the vehicle power
 					if ( input.power === true ) {
-						vehicle.applyEngineForce( -50 );
+						var vel = vehicle.mesh.getLinearVelocity();
+						var velLen = vel.length();
+						if(velLen < maxVelocity ){
+							vehicle.applyEngineForce( 80, 0);
+							vehicle.applyEngineForce( 80, 1 );
+						} else {
+							vehicle.applyEngineForce( 0, 0 );
+							vehicle.applyEngineForce( 0, 1 );
+						}
+
 					} else if ( input.power === false ) {
-						//vehicle.setBrake( 5, 1 );
 						
 						//vehicle.setBrake( 5, 2 );
-						vehicle.applyEngineForce( 30 );
+						//vehicle.setBrake( 5, 3 );
+
+						vehicle.applyEngineForce( -30 );
 						
 					} else {
 						vehicle.applyEngineForce( 0 );
-						vehicle.setBrake( 1.5, 2 );
-						vehicle.setBrake( 1.5, 3 );
+						
 					}
+
+					// Brake the vehicle according to the steering angle and the velocity of the vehicle
+					var brakeAmount = brakeTurnFactor * Math.abs(input.steering) * vehicle.mesh.getLinearVelocity().length();
+					// Lower limit
+					if(brakeAmount < 0.15) brakeAmount = 0.15;
+					// Apply the brakes
+					vehicle.setBrake( brakeAmount, 2 );
+					vehicle.setBrake( brakeAmount, 3 );
+
+					console.log("Brake amount: ", brakeAmount);
+
+
 				}
 
+				// Limit the maximum velocity of the vehicle
+				//limitVelocity(vehicle.mesh ,maxVelocity);
+/*
+				// Limit the maximum velocity of the vehicle
+				if(vehicle !== null){
+					var vel = vehicle.mesh.getLinearVelocity();
+					var velLen = vel.length();
+					if(velLen > maxVelocity ){
+						/*
+						var rotation_matrix = new THREE.Matrix4().extractRotation(vehicle.mesh.matrix);
+						// Rotate the vector in the direction of the ship, using the ship's matrix
+						vel = new THREE.Vector3(0, 0,maxVelocity);
+						vel.applyMatrix4(rotation_matrix);
+						vehicle.mesh.setLinearVelocity(vel);
+						
+						vel.divideScalar(velLen);
+						vel.multiplyScalar(maxVelocity);
+						vehicle.mesh.setLinearVelocity(vel);
+					} 
+
+					//console.log(velLen);
+					
+				}
+*/
+				if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());
+				
 				scene.simulate( undefined, 2 );
 				physics_stats.update();
 			
@@ -89,6 +157,8 @@
 			1000
 		);
 		scene.add( camera );
+		camera.position.set( 40, 100, 40 );
+		camera.lookAt(scene.position);
 		
 		// Light
 		light = new THREE.DirectionalLight( 0xFFFFFF );
@@ -139,7 +209,7 @@
 
 		// "Water"
 		var water = new THREE.PlaneGeometry( 500, 500, 10, 10 );
-		var wmesh = new THREE.Mesh( water, new THREE.MeshLambertMaterial({color: 0x5555dd}) );		
+		var wmesh = new THREE.Mesh( water, new THREE.MeshLambertMaterial({color: 0x5555dd, transparent: true, opacity: 0.7}) );		
 		wmesh.rotation.x = -Math.PI/2;
 		wmesh.position.set( 0, 3, 0 );
 		wmesh.recieveShadow = true;
@@ -162,8 +232,8 @@
 		}
 
 
+		// Load and setup the vehicle
 		var loader = new THREE.JSONLoader();
-
 		loader.load( "models/ship.js", function( car, car_materials ) {
 			loader.load( "models/mustang_wheel.js", function( wheel, wheel_materials ) {
 				var mesh = new Physijs.ConvexMesh(
@@ -182,26 +252,35 @@
 					10.5,	// friction slip
 					6000	// max suspension force
 				));
+				
 				scene.add( vehicle );
 
 				var wheel_material = new THREE.MeshFaceMaterial( wheel_materials );
 
 				for ( var i = 0; i < 4; i++ ) {
 					vehicle.addWheel(
-						wheel,
-						new THREE.MeshLambertMaterial({color: 0xcccccc, transparent: true, opacity: 0.25}),
+						wheel,	// geometry
+						new THREE.MeshLambertMaterial({color: 0xcccccc, transparent: true, opacity: 0.0}),	//material
 						new THREE.Vector3(
 								i % 2 === 0 ? -1.6 : 1.6,
 								-1,
-								i < 2 ? 3.3 : -3.2
-						),
-						new THREE.Vector3( 0, -1, 0 ),
-						new THREE.Vector3( -1, 0, 0 ),
-						0.5,
-						0.7,
-						i < 2 ? false : true
+								i < 2 ? 4.4 : -3.0
+						),	// connection point
+						new THREE.Vector3( 0, -1, 0 ),	// wheel direction
+						new THREE.Vector3( -1, 0, 0 ),	// wheel axle
+						0.3,	//suspension rest length
+						2,	//wheel radius
+						i < 2 ? false : true	// is front wheel
 					);
+					
 				}
+
+				// Don't display the wheels or the shadows
+				for (i = 0; i < 4; i++){
+					vehicle.wheels[i].castShadow = vehicle.wheels[i].receiveShadow = false;
+					vehicle.wheels[i].visible = false;
+				}
+				
 
 				input = {
 					power: null,
@@ -256,8 +335,8 @@
 	render = function() {
 		requestAnimationFrame( render );
 		if ( vehicle ) {
-			camera.position.copy( vehicle.mesh.position ).add( new THREE.Vector3( 40, 25, 40 ) );
-			camera.lookAt( vehicle.mesh.position );
+			//camera.position.copy( vehicle.mesh.position ).add( new THREE.Vector3( 40, 25, 40 ) );
+			//camera.lookAt( vehicle.mesh.position );
 
 			light.target.position.copy( vehicle.mesh.position );
 			light.position.addVectors( light.target.position, new THREE.Vector3( 20, 20, -15 ) );
@@ -265,6 +344,21 @@
 		renderer.render( scene, camera );
 		render_stats.update();
 	};
+
+	limitVelocity = function(object, maxVel) {
+		// Limit the maximum velocity of the object
+		if(object !== null){
+			var vel = object.getLinearVelocity();
+			var velLen = vel.length();
+			if(velLen > maxVel ){
+
+				vel.divideScalar(velLen);
+				vel.multiplyScalar(maxVel);
+				object.setLinearVelocity(vel);
+			}
+			//console.log(velLen);	
+		}
+	}
 
 	window.onload = initScene;
 	
