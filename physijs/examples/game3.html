@@ -105,7 +105,7 @@
 					}
 
 					// Brake the vehicle according to the steering angle and the velocity of the vehicle
-					var brakeAmount = brakeTurnFactor * input.steering * vehicle.mesh.getLinearVelocity().length();
+					var brakeAmount = brakeTurnFactor * Math.abs(input.steering) * vehicle.mesh.getLinearVelocity().length();
 					// Lower limit
 					if(brakeAmount < 0.15) brakeAmount = 0.15;
 					// Apply the brakes
@@ -141,7 +141,7 @@
 					
 				}
 */
-				//if(vehicle) console.log(vehicle.mesh.getLinearVelocity().length());
+				if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());
 				
 				scene.simulate( undefined, 2 );
 				physics_stats.update();
@@ -157,7 +157,7 @@
 			1000
 		);
 		scene.add( camera );
-		camera.position.set( 40, 80, 40 );
+		camera.position.set( 40, 100, 40 );
 		camera.lookAt(scene.position);
 		
 		// Light
