@@ -22,8 +22,10 @@
 	var initScene, render,
 		ground_material, box_material,
 		projector, renderer, render_stats, physics_stats, scene, ground, light, camera,
-			vehicle_body, vehicle;
+			vehicle_body, vehicle, cannonball;
 
+	//cannon handling parameters
+	var cannon_loaded = true;
 
 	// Vehicle handling parameters
 	var turnDeltaFactor = 50;
@@ -112,9 +114,42 @@
 					vehicle.setBrake( brakeAmount, 2 );
 					vehicle.setBrake( brakeAmount, 3 );
 
-					console.log("Brake amount: ", brakeAmount);
+					//console.log("Brake amount: ", brakeAmount);
 
 
+				}
+
+				//Handle firing cannons
+				if ( input.cannon && cannon_loaded ) {
+
+					cannon_loaded = false;
+					cannonball = new Physijs.SphereMesh(
+						new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
+						new THREE.MeshLambertMaterial( {color: 0x000000} )
+					);
+					cannonball.castShadow = cannonball.receiveShadow = true;
+					//TODO: calculate position of the end of a cannon
+					//var rotation_matrix = new THREE.Matrix4().extractRotation( vehicle.mesh.matrix );
+					//var position_vector = new THREE.Vector3( 2, 0, 2 ).applyMatrix4( rotation_matrix );
+					cannonball.position.set(
+						vehicle.mesh.position.x,
+						vehicle.mesh.position.y + 5,
+						vehicle.mesh.position.z
+					);
+					//destroy cannonball when collided
+					cannonball.addEventListener(
+						'collision',
+						function( collided_with, linearVelocity, angularVelocity ) {
+							scene.remove( this );
+							//if ( collided_with instanceof Physijs.BoxMesh ) scene.remove( collided_with );
+							cannon_loaded = true;
+						}
+					);
+					// calculate force vector, add cannonball to the scene and apply impulse
+					var rotation_matrix = new THREE.Matrix4().extractRotation( vehicle.mesh.matrix );
+					var force_vector = new THREE.Vector3( 2, 2, 0 ).applyMatrix4( rotation_matrix );
+					scene.add( cannonball );
+					cannonball.applyCentralImpulse( force_vector );
 				}
 
 				// Limit the maximum velocity of the vehicle
@@ -141,7 +176,8 @@
 					
 				}
 */
-				if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());
+				//if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());
+
 				
 				scene.simulate( undefined, 2 );
 				physics_stats.update();
@@ -196,7 +232,6 @@
 		);
 		box_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
 		box_material.map.repeat.set( .25, .25 );
-
 		
 		// Ground
 		ground = new Physijs.BoxMesh(
@@ -214,7 +249,6 @@
 		wmesh.position.set( 0, 3, 0 );
 		wmesh.recieveShadow = true;
 		scene.add( wmesh );
-
 
 		for (var i = 0; i < 8; i++ ) {
 			var size = Math.random() * 10 + .5;
@@ -285,7 +319,9 @@
 				input = {
 					power: null,
 					direction: null,
-					steering: 0
+					steering: 0,
+					cannon_power: 0,
+					cannon: null
 				};
 				document.addEventListener('keydown', function( ev ) {
 					switch ( ev.keyCode ) {
@@ -303,6 +339,10 @@
 
 						case 40: // back
 							input.power = false;
+							break;
+
+						case 32: //spacebar
+							input.cannon = true;
 							break;
 					}
 				});
@@ -322,6 +362,10 @@
 
 						case 40: // back
 							input.power = null;
+							break;
+
+						case 32: //spacebar
+							input.cannon = null;
 							break;
 					}
 				});
@@ -359,6 +403,8 @@
 			//console.log(velLen);	
 		}
 	}
+
+
 
 	window.onload = initScene;
 	
