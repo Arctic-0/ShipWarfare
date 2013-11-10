@@ -11,7 +11,7 @@
 	<script type="text/javascript" src="js/stats.js"></script>
 	<script type="text/javascript" src="js/simplex-noise.js"></script>
 	<script type="text/javascript" src="../physi.js"></script>
-	
+
 	<script type="text/javascript">
 	
 	'use strict';
@@ -123,6 +123,7 @@
 				if ( input.cannon && cannon_loaded ) {
 
 					cannon_loaded = false;
+					input.cannon = null;
 					cannonball = new Physijs.SphereMesh(
 						new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
 						new THREE.MeshLambertMaterial( {color: 0x000000} )
@@ -145,12 +146,18 @@
 							cannon_loaded = true;
 						}
 					);
-					// calculate force vector, add cannonball to the scene and apply impulse
+					// calculate force vector, add cannonball to the scene and apply impulse with calculated cannon power
+					var calculated_cannon_power = input.cannon_power * 1 / 10;
 					var rotation_matrix = new THREE.Matrix4().extractRotation( vehicle.mesh.matrix );
-					var force_vector = new THREE.Vector3( 2, 2, 0 ).applyMatrix4( rotation_matrix );
+					var force_vector = new THREE.Vector3( 1 + calculated_cannon_power, 1 + calculated_cannon_power, 0 ).applyMatrix4( rotation_matrix );
+					input.cannon_power = -1;
+					//force_vector = force_vector.add( vehicle.mesh.getLinearVelocity() );
 					scene.add( cannonball );
 					cannonball.applyCentralImpulse( force_vector );
 				}
+
+				//progress bar for testing
+				document.getElementById("progress_bar").value = input.cannon_power.toString();
 
 				// Limit the maximum velocity of the vehicle
 				//limitVelocity(vehicle.mesh ,maxVelocity);
@@ -265,7 +272,6 @@
 			scene.add( box )
 		}
 
-
 		// Load and setup the vehicle
 		var loader = new THREE.JSONLoader();
 		loader.load( "models/ship.js", function( car, car_materials ) {
@@ -320,7 +326,7 @@
 					power: null,
 					direction: null,
 					steering: 0,
-					cannon_power: 0,
+					cannon_power: -1,
 					cannon: null
 				};
 				document.addEventListener('keydown', function( ev ) {
@@ -342,7 +348,10 @@
 							break;
 
 						case 32: //spacebar
-							input.cannon = true;
+							if ( cannon_loaded ) {
+								input.cannon_power++;
+								if ( input.cannon_power > 19 ) input.cannon = true;
+							}
 							break;
 					}
 				});
@@ -365,7 +374,7 @@
 							break;
 
 						case 32: //spacebar
-							input.cannon = null;
+							if ( cannon_loaded ) input.cannon = true;
 							break;
 					}
 				});
@@ -413,6 +422,7 @@
 
 <body>
 	<div id="viewport"></div>
+	<progress id="progress_bar" value="0" min="0" max="20"></progress> 
 </body>
 
 </html>
