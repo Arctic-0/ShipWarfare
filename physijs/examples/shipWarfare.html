@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>ShipWarfare</title>
+	
+	<link rel="stylesheet" type="text/css" href="css/styles.css" />
+	
+	<script type="text/javascript" src="js/three.min.js"></script>
+	<script type="text/javascript" src="js/stats.js"></script>
+	<script type="text/javascript" src="js/simplex-noise.js"></script>
+	<script type="text/javascript" src="../physi.js"></script>
+	<script type="text/javascript" src="player.js"></script>
+
+	<script type="text/javascript">
+	
+	'use strict';
+	
+	Physijs.scripts.worker = '../physijs_worker.js';
+	Physijs.scripts.ammo = 'examples/js/ammo.js';
+	
+	var initScene, render,
+		ground_material, box_material,
+		projector, renderer, render_stats, physics_stats, scene, ground, light, camera;
+			
+
+	
+
+	
+
+	// Functions
+	var limitVelocity;
+
+	
+	initScene = function() {
+		projector = new THREE.Projector;
+		
+		renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.shadowMapEnabled = true;
+		renderer.shadowMapSoft = true;
+		document.getElementById( 'viewport' ).appendChild( renderer.domElement );
+		
+		render_stats = new Stats();
+		render_stats.domElement.style.position = 'absolute';
+		render_stats.domElement.style.top = '1px';
+		render_stats.domElement.style.zIndex = 100;
+		document.getElementById( 'viewport' ).appendChild( render_stats.domElement );
+
+		physics_stats = new Stats();
+		physics_stats.domElement.style.position = 'absolute';
+		physics_stats.domElement.style.top = '50px';
+		physics_stats.domElement.style.zIndex = 100;
+		document.getElementById( 'viewport' ).appendChild( physics_stats.domElement );
+		
+		scene = new Physijs.Scene;
+		scene.setGravity(new THREE.Vector3( 0, -30, 0 ));
+		scene.addEventListener(
+			'update',
+			function() {
+
+				// Update the players
+				player1.updatePlayer();
+				player2.updatePlayer();
+
+				scene.simulate( undefined, 2 );
+				physics_stats.update();
+			}	
+		);
+		
+		camera = new THREE.PerspectiveCamera(
+			35,
+			window.innerWidth / window.innerHeight,
+			1,
+			1000
+		);
+		scene.add( camera );
+		camera.position.set( 40, 100, 40 );
+		camera.lookAt(scene.position);
+		
+		// Light
+		light = new THREE.DirectionalLight( 0xFFFFFF );
+		light.position.set( 20, 20, -15 );
+		light.target.position.copy( scene.position );
+		light.castShadow = true;
+		light.shadowCameraLeft = -150;
+		light.shadowCameraTop = -150;
+		light.shadowCameraRight = 150;
+		light.shadowCameraBottom = 150;
+		light.shadowCameraNear = 20;
+		light.shadowCameraFar = 400;
+		light.shadowBias = -.0001
+		light.shadowMapWidth = light.shadowMapHeight = 2048;
+		light.shadowDarkness = .7;
+		scene.add( light );
+
+
+		
+		// Materials
+		ground_material = Physijs.createMaterial(
+			new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture( 'images/sand.jpg' ) }),
+			.8, // high friction
+			.4 // low restitution
+		);
+		ground_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
+		ground_material.map.repeat.set( 10, 10 );
+		
+		box_material = Physijs.createMaterial(
+			new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture( 'images/plywood.jpg' ) }),
+			.4, // low friction
+			.6 // high restitution
+		);
+		box_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
+		box_material.map.repeat.set( .25, .25 );
+		
+		// Ground
+		ground = new Physijs.BoxMesh(
+			new THREE.CubeGeometry(400, 1, 400),
+			ground_material,
+			0 // mass
+		);
+		ground.receiveShadow = true;
+		scene.add( ground );
+
+		// "Water"
+		var water = new THREE.PlaneGeometry( 500, 500, 10, 10 );
+		var wmesh = new THREE.Mesh( water, new THREE.MeshLambertMaterial({color: 0x5555dd, transparent: true, opacity: 0.7}) );		
+		wmesh.rotation.x = -Math.PI/2;
+		wmesh.position.set( 0, 3, 0 );
+		wmesh.recieveShadow = true;
+		scene.add( wmesh );
+
+		for (var i = 0; i < 8; i++ ) {
+			var size = Math.random() * 10 + .5;
+			var box = new Physijs.BoxMesh(
+				new THREE.CubeGeometry( size, size, size ),
+				box_material
+			);
+			box.castShadow = box.receiveShadow = true;
+			box.position.set(
+				Math.random() * 25 - 50,
+				5,
+				Math.random() * 25 - 50
+			);
+			scene.add( box )
+		}
+
+		// Instantiate the players
+		var player1 = new Player(0,2,0,0, 1, scene,input1, null);
+		var player2 = new Player(20,10,0,0, 1, scene, input2, null);
+
+		
+
+		requestAnimationFrame( render );
+		scene.simulate();
+	};
+	
+	render = function() {
+		requestAnimationFrame( render );
+		/*
+		if ( vehicle ) {
+			//camera.position.copy( vehicle.mesh.position ).add( new THREE.Vector3( 40, 25, 40 ) );
+			//camera.lookAt( vehicle.mesh.position );
+
+			light.target.position.copy( vehicle.mesh.position );
+			light.position.addVectors( light.target.position, new THREE.Vector3( 20, 20, -15 ) );
+		}
+		*/
+		renderer.render( scene, camera );
+		render_stats.update();
+	};
+
+	limitVelocity = function(object, maxVel) {
+		// Limit the maximum velocity of the object
+		if(object !== null){
+			var vel = object.getLinearVelocity();
+			var velLen = vel.length();
+			if(velLen > maxVel ){
+
+				vel.divideScalar(velLen);
+				vel.multiplyScalar(maxVel);
+				object.setLinearVelocity(vel);
+			}
+			//console.log(velLen);	
+		}
+	}
+
+
+
+	window.onload = initScene;
+	
+	</script>
+</head>
+
+<body>
+	<div id="viewport"></div>
+	<progress id="progress_bar" value="0" min="0" max="20"></progress> 
+</body>
+
+</html>
