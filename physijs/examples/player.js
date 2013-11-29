@@ -3,7 +3,9 @@ var input1 = {
 	direction: null,
 	steering: 0,
 	cannon_power: -1,
-	cannon: null
+	cannon: null,
+	cannon_loaded: true,
+	health: 100
 };
 
 var input2 = {
@@ -11,7 +13,9 @@ var input2 = {
 	direction: null,
 	steering: 0,
 	cannon_power: -1,
-	cannon: null
+	cannon: null,
+	cannon_loaded: true,
+	health: 100
 };
 
 
@@ -29,7 +33,7 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 	this.engineForce = 130;
 
 	//cannon handling parameters
-	this.cannon_loaded = true;
+	//this.cannon_loaded = true;
 
 	// Load and setup the vehicle
 	var loader = new THREE.JSONLoader();
@@ -54,6 +58,12 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 				6000	// max suspension force
 			));
 			
+			vehicle.mesh.addEventListener(
+				'collision',
+				function( collided_with, linearVelocity, angularVelocity ) {
+					if ( collided_with instanceof Physijs.SphereMesh ) input.health -= 100;
+				}
+			);
 			scene.add( vehicle );
 
 			this.wheel_material = new THREE.MeshFaceMaterial( wheel_materials );
@@ -83,54 +93,10 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			}
 			
 			document.addEventListener('keydown', function( ev ) {
-				switch ( ev.keyCode ) {
-					case 37: // left
-						input.direction = -1;
-						break;
-
-					case 38: // forward
-						input.power = true;
-						
-						break;
-
-					case 39: // right
-						input.direction = 1;
-						break;
-
-					case 40: // back
-						input.power = false;
-						break;
-
-					case 32: //spacebar
-						if ( this.cannon_loaded ) {
-							input.cannon_power++;
-							if ( input.cannon_power > 19 ) input.cannon = true;
-						}
-						break;
-				}
+				keyDown( ev.keyCode );
 			});
 			document.addEventListener('keyup', function( ev ) {
-				switch ( ev.keyCode ) {
-					case 37: // left
-						input.direction = null;
-						break;
-
-					case 38: // forward
-						input.power = null;
-						break;
-
-					case 39: // right
-						input.direction = null;
-						break;
-
-					case 40: // back
-						input.power = null;
-						break;
-
-					case 32: //spacebar
-						if ( this.cannon_loaded ) input.cannon = true;
-						break;
-				}
+				keyUp( ev.keyCode );
 			});
 		});
 	});
@@ -139,7 +105,6 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 	this.updatePlayer = updatePlayer;
 	function updatePlayer () {
 		// Update vehicle 
-		
 			if( input && vehicle ) {
 
 				// Handle the vehicle steering
@@ -196,9 +161,9 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			}
 
 			//Handle firing cannons
-			if ( input.cannon && this.cannon_loaded ) {
+			if ( input.cannon && input.cannon_loaded ) {
 
-				this.cannon_loaded = false;
+				input.cannon_loaded = false;
 				input.cannon = null;
 				this.cannonball = new Physijs.SphereMesh(
 					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
@@ -214,12 +179,12 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 					vehicle.mesh.position.z
 				);
 				//destroy cannonball when collided
-				thiscannonball.addEventListener(
+				this.cannonball.addEventListener(
 					'collision',
 					function( collided_with, linearVelocity, angularVelocity ) {
 						scene.remove( this );
 						//if ( collided_with instanceof Physijs.BoxMesh ) scene.remove( collided_with );
-						this.cannon_loaded = true;
+						input.cannon_loaded = true;
 					}
 				);
 				// calculate force vector, add cannonball to the scene and apply impulse with calculated cannon power
@@ -233,8 +198,14 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 				this.cannonball.applyCentralImpulse( this.force_vector );
 			}
 
+			//check if ship has enough health
+			if(input.health < 1){
+				scene.remove( vehicle );
+				//todo: add wreck to scene
+			}
+
 			//progress bar for testing
-			document.getElementById("progress_bar").value = input.cannon_power.toString();
+			//document.getElementById("progress_bar").value = input.cannon_power.toString();
 
 			// Limit the maximum velocity of the vehicle
 			//limitVelocity(vehicle.mesh ,maxVelocity);
@@ -260,13 +231,110 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 				
 			}
 */
-			//if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());
-
-			
-			
+			//if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());		
 	}
 
+	function keyDown( keycode ){
+		if( pID == 0 ){
+			switch ( keycode ) {
+				case 37: // left
+					input.direction = -1;
+					break;
 
+				case 38: // forward
+					input.power = true;
+					break;
 
+				case 39: // right
+					input.direction = 1;
+					break;
 
+				case 40: // back
+					input.power = false;
+					break;
+
+				case 76: // l
+					if ( input.cannon_loaded ) {
+						input.cannon_power++;
+						if ( input.cannon_power > 19 ) input.cannon = true;
+					}
+					break;
+			}
+		}
+		else if( pID == 1 ){
+			switch ( keycode ) {
+				case 65: // a
+					input.direction = -1;
+					break;
+
+				case 87: // w
+					input.power = true;
+					break;
+
+				case 68: // d
+					input.direction = 1;
+					break;
+
+				case 83: // s
+					input.power = false;
+					break;
+
+				case 32: // spacebar
+					if ( input.cannon_loaded ) {
+						input.cannon_power++;
+						if ( input.cannon_power > 19 ) input.cannon = true;
+					}
+					break;
+			}
+		}
+	}
+
+	function keyUp( keycode ){
+		if( pID == 0 ){
+			switch ( keycode ) {
+				case 37: // left
+					input.direction = null;
+					break;
+
+				case 38: // forward
+					input.power = null;
+					break;
+
+				case 39: // right
+					input.direction = null;
+					break;
+
+				case 40: // back
+					input.power = null;
+					break;
+
+				case 76: // l
+					if ( input.cannon_loaded ) input.cannon = true;
+					break;
+			}
+		}
+		else if( pID == 1 ){
+			switch ( keycode ) {
+				case 65: // a
+					input.direction = null;
+					break;
+
+				case 87: // w
+					input.power = null;
+					break;
+
+				case 68: // d
+					input.direction = null;
+					break;
+
+				case 83: // s
+					input.power = null;
+					break;
+
+				case 32: // spacebar
+					if ( input.cannon_loaded ) input.cannon = true;
+					break;
+			}
+		}
+	}
 } // END PLAYER
