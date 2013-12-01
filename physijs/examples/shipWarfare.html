@@ -97,28 +97,52 @@
 		light.shadowDarkness = .7;
 		scene.add( light );
 
-
-		
 		// Materials
-		ground_material = Physijs.createMaterial(
-			new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture( 'images/sand.jpg' ) }),
-			.8, // high friction
-			.4 // low restitution
-		);
-		ground_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
-		ground_material.map.repeat.set( 10, 10 );
-		
+		// Box materail
 		box_material = Physijs.createMaterial(
 			new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture( 'images/plywood.jpg' ) }),
 			.4, // low friction
 			.6 // high restitution
 		);
-		box_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
-		box_material.map.repeat.set( .25, .25 );
 		
+		box_material.map.repeat.set( .25, .25 );
+
+
+		// Ground material
+		ground_material = Physijs.createMaterial(
+			new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture( 'images/sand.jpg' ), transparent: true, opacity: 0.0 }),
+			.8, // high friction
+			.4 // low restitution
+		);
+		ground_material.map.wrapS = ground_material.map.wrapT = THREE.RepeatWrapping;
+		ground_material.map.repeat.set( 10, 10 );
+
+
+		var sandTexture = THREE.ImageUtils.loadTexture( 'images/sand.jpg' );
+		var sandMaterial = new THREE.MeshLambertMaterial( { color: 0xffffff, map: sandTexture } );
+		sandMaterial.map.repeat.set( 10, 10 );
+		
+
+		box_material.map.wrapS = ground_material.map.wrapT = sandMaterial.map.wrapT = sandMaterial.map.wrapS = THREE.RepeatWrapping;
+
+		// Load the sand bottom model
+		var callbackSand = function( geometry ) {
+		    var zmesh = new THREE.Mesh( geometry, sandMaterial);
+		    zmesh.position.set( 0, 1.0, 0 );
+		    zmesh.scale.set( 0.6, 0.33, 0.6 );
+		    //zmesh.rotation.y = rot - 0.3;
+		    zmesh.overdraw = true;
+		    zmesh.receiveShadow = true;
+
+		    scene.add( zmesh );
+		};
+
+		var loader = new THREE.JSONLoader();
+		loader.load( "models/sand.js", callbackSand );
+
 		// Ground
 		ground = new Physijs.BoxMesh(
-			new THREE.CubeGeometry(400, 1, 400),
+			new THREE.CubeGeometry(400, 5, 400),
 			ground_material,
 			0 // mass
 		);
