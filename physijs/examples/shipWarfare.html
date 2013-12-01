@@ -11,6 +11,7 @@
 	<script type="text/javascript" src="js/stats.js"></script>
 	<script type="text/javascript" src="js/simplex-noise.js"></script>
 	<script type="text/javascript" src="../physi.js"></script>
+	<script type="text/javascript" src="base.js"></script>
 	<script type="text/javascript" src="player.js"></script>
 
 	<script type="text/javascript">
@@ -23,11 +24,6 @@
 	var initScene, render,
 		ground_material, box_material,
 		projector, renderer, render_stats, physics_stats, scene, ground, light, camera;
-			
-
-	
-
-	
 
 	// Functions
 	var limitVelocity;
@@ -64,8 +60,14 @@
 				player1.updatePlayer();
 				player2.updatePlayer();
 
+				// Update forts
+				base1.updateBase();
+				base2.updateBase();
+
 				scene.simulate( undefined, 2 );
 				physics_stats.update();
+
+
 			}	
 		);
 		
@@ -81,7 +83,7 @@
 		
 		// Light
 		light = new THREE.DirectionalLight( 0xFFFFFF );
-		light.position.set( 20, 20, -15 );
+		light.position.set( 30, 40, 10 );
 		light.target.position.copy( scene.position );
 		light.castShadow = true;
 		light.shadowCameraLeft = -150;
@@ -149,6 +151,10 @@
 		// Instantiate the players
 		var player1 = new Player(0,2,0,0, 0, scene,input1, null);
 		var player2 = new Player(20,10,0,0, 1, scene, input2, null);
+
+		// Instantiate the bases
+		var base1 = new Base(-40, -0.5, 40, 0, 1, scene, vars1);
+		var base2 = new Base(40, -0.5, -40, -1.5, 1, scene, vars2);
 
 		
 
