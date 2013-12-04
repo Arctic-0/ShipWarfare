@@ -36,17 +36,24 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 	//this.cannon_loaded = true;
 
 	// Load and setup the vehicle
+	var car_material = Physijs.createMaterial(
+		new THREE.MeshLambertMaterial({ map: THREE.ImageUtils.loadTexture( 'images/ship_diffuse.png' ) }),
+		.2, 
+		.4 
+	);
 	var loader = new THREE.JSONLoader();
-	loader.load( "models/ship.js", function( car, car_materials ) {
+	loader.load( "models/warship.js", function( car, car_materials ) {
 		loader.load( "models/mustang_wheel.js", function( wheel, wheel_materials ) {
 			this.mesh = new Physijs.ConvexMesh(
 				car,
-				new THREE.MeshFaceMaterial( car_materials )
+				car_material
+				//new THREE.MeshFaceMaterial( car_materials )
 				//, 10 // mass
 			);
 			this.mesh.position.y = posY;
 			this.mesh.position.x = posX;
 			this.mesh.position.z = posZ;
+			this.mesh.scale.set(0.8, 0.8, 0.8);
 			this.mesh.castShadow = this.mesh.receiveShadow = true;
 
 			vehicle = new Physijs.Vehicle(mesh, new Physijs.VehicleTuning(
