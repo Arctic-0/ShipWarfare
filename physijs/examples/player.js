@@ -306,7 +306,7 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 				// calculate force vector, add cannonball to the scene and apply impulse with calculated cannon power
 				this.force_vector2 = new THREE.Vector3( -(1 + this.calculated_cannon_power), 1 + this.calculated_cannon_power, 0 ).applyMatrix4( this.rotation_matrix );
 				
-				this.force_vector2 = this.force_vector2.add( vehicle.mesh.getLinearVelocity().multiplyScalar( 0.1 ) );
+				this.force_vector2 = this.force_vector2.add( vehicle.mesh.getLinearVelocity().multiplyScalar( 0.9 ) );
 				scene.add( this.cannonball4 );
 				scene.add( this.cannonball5 );
 				scene.add( this.cannonball6 );
