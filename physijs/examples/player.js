@@ -48,12 +48,12 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 				car,
 				car_material
 				//new THREE.MeshFaceMaterial( car_materials )
-				//, 10 // mass
+				, 60 // mass
 			);
+			this.mesh.scale.set(0.8, 0.8, 0.8);
 			this.mesh.position.y = posY;
 			this.mesh.position.x = posX;
 			this.mesh.position.z = posZ;
-			this.mesh.scale.set(0.8, 0.8, 0.8);
 			this.mesh.castShadow = this.mesh.receiveShadow = true;
 
 			vehicle = new Physijs.Vehicle(mesh, new Physijs.VehicleTuning(
@@ -68,7 +68,7 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			vehicle.mesh.addEventListener(
 				'collision',
 				function( collided_with, linearVelocity, angularVelocity ) {
-					if ( collided_with instanceof Physijs.SphereMesh ) input.health -= 100;
+					if ( collided_with instanceof Physijs.SphereMesh ) input.health -= 5;
 				}
 			);
 			scene.add( vehicle );
@@ -167,47 +167,160 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 
 			}
 
-			//Handle firing cannons
+			//Handle firing cannon
 			if ( input.cannon && input.cannon_loaded ) {
 
 				input.cannon_loaded = false;
 				input.cannon = null;
-				this.cannonball = new Physijs.SphereMesh(
+
+				//left side
+				this.cannonball1 = new Physijs.SphereMesh(
 					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
 					new THREE.MeshLambertMaterial( {color: 0x000000} )
 				);
-				this.cannonball.castShadow = this.cannonball.receiveShadow = true;
-				//TODO: calculate position of the end of a cannon
-				//var rotation_matrix = new THREE.Matrix4().extractRotation( vehicle.mesh.matrix );
-				//var position_vector = new THREE.Vector3( 2, 0, 2 ).applyMatrix4( rotation_matrix );
-				this.cannonball.position.set(
-					vehicle.mesh.position.x,
-					vehicle.mesh.position.y + 5,
-					vehicle.mesh.position.z
+				this.cannonball1.castShadow = this.cannonball1.receiveShadow = true;
+				this.cannonball2 = new Physijs.SphereMesh(
+					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
+					new THREE.MeshLambertMaterial( {color: 0x000000} )
+				);
+				this.cannonball2.castShadow = this.cannonball2.receiveShadow = true;
+				this.cannonball3 = new Physijs.SphereMesh(
+					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
+					new THREE.MeshLambertMaterial( {color: 0x000000} )
+				);
+				this.cannonball3.castShadow = this.cannonball3.receiveShadow = true;
+
+				this.rotation_matrix = new THREE.Matrix4().extractRotation( vehicle.mesh.matrix );
+				this.position_matrix = new THREE.Matrix4().copyPosition( vehicle.mesh.matrix );
+				this.position_vector1 = new THREE.Vector3( 5, 3, 2 ).applyMatrix4( this.rotation_matrix ).applyMatrix4( this.position_matrix );
+				this.position_vector2 = new THREE.Vector3( 5, 3, -0.5 ).applyMatrix4( this.rotation_matrix ).applyMatrix4( this.position_matrix );
+				this.position_vector3 = new THREE.Vector3( 5, 3, -3 ).applyMatrix4( this.rotation_matrix ).applyMatrix4( this.position_matrix );
+
+				this.cannonball1.position.set(
+					this.position_vector1.x,
+					this.position_vector1.y,
+					this.position_vector1.z
+				);
+				this.cannonball2.position.set(
+					this.position_vector2.x,
+					this.position_vector2.y,
+					this.position_vector2.z
+				);
+				this.cannonball3.position.set(
+					this.position_vector3.x,
+					this.position_vector3.y,
+					this.position_vector3.z
 				);
 				//destroy cannonball when collided
-				this.cannonball.addEventListener(
+				this.cannonball1.addEventListener(
 					'collision',
 					function( collided_with, linearVelocity, angularVelocity ) {
 						scene.remove( this );
-						//if ( collided_with instanceof Physijs.BoxMesh ) scene.remove( collided_with );
+						input.cannon_loaded = true;
+					}
+				);
+				this.cannonball2.addEventListener(
+					'collision',
+					function( collided_with, linearVelocity, angularVelocity ) {
+						scene.remove( this );
+						input.cannon_loaded = true;
+					}
+				);
+				this.cannonball3.addEventListener(
+					'collision',
+					function( collided_with, linearVelocity, angularVelocity ) {
+						scene.remove( this );
 						input.cannon_loaded = true;
 					}
 				);
 				// calculate force vector, add cannonball to the scene and apply impulse with calculated cannon power
 				this.calculated_cannon_power = input.cannon_power * 1 / 10;
-				this.rotation_matrix = new THREE.Matrix4().extractRotation( vehicle.mesh.matrix );
-				this.force_vector = new THREE.Vector3( 1 + this.calculated_cannon_power, 1 + this.calculated_cannon_power, 0 ).applyMatrix4( this.rotation_matrix );
+				this.force_vector1 = new THREE.Vector3( 1 + this.calculated_cannon_power, 1 + this.calculated_cannon_power, 0 ).applyMatrix4( this.rotation_matrix );
 				
+				this.force_vector1 = this.force_vector1.add( vehicle.mesh.getLinearVelocity().multiplyScalar( 0.1 ) );
+				scene.add( this.cannonball1 );
+				scene.add( this.cannonball3 );
+				scene.add( this.cannonball2 );
+				this.cannonball1.applyCentralImpulse( this.force_vector1 );
+				this.cannonball2.applyCentralImpulse( this.force_vector1 );
+				this.cannonball3.applyCentralImpulse( this.force_vector1 );
+
+				//right side
+				this.cannonball4 = new Physijs.SphereMesh(
+					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
+					new THREE.MeshLambertMaterial( {color: 0x000000} )
+				);
+				this.cannonball4.castShadow = this.cannonball1.receiveShadow = true;
+				this.cannonball5 = new Physijs.SphereMesh(
+					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
+					new THREE.MeshLambertMaterial( {color: 0x000000} )
+				);
+				this.cannonball5.castShadow = this.cannonball2.receiveShadow = true;
+				this.cannonball6 = new Physijs.SphereMesh(
+					new THREE.SphereGeometry( 0.3, 20, 20, 0, Math.PI * 2, 0, Math.PI ),
+					new THREE.MeshLambertMaterial( {color: 0x000000} )
+				);
+				this.cannonball6.castShadow = this.cannonball3.receiveShadow = true;
+
+				this.position_vector4 = new THREE.Vector3( -5, 3, 2 ).applyMatrix4( this.rotation_matrix ).applyMatrix4( this.position_matrix );
+				this.position_vector5 = new THREE.Vector3( -5, 3, -0.5 ).applyMatrix4( this.rotation_matrix ).applyMatrix4( this.position_matrix );
+				this.position_vector6 = new THREE.Vector3( -5, 3, -3 ).applyMatrix4( this.rotation_matrix ).applyMatrix4( this.position_matrix );
+
+				this.cannonball4.position.set(
+					this.position_vector4.x,
+					this.position_vector4.y,
+					this.position_vector4.z
+				);
+				this.cannonball5.position.set(
+					this.position_vector5.x,
+					this.position_vector5.y,
+					this.position_vector5.z
+				);
+				this.cannonball6.position.set(
+					this.position_vector6.x,
+					this.position_vector6.y,
+					this.position_vector6.z
+				);
+				//destroy cannonball when collided
+				this.cannonball4.addEventListener(
+					'collision',
+					function( collided_with, linearVelocity, angularVelocity ) {
+						scene.remove( this );
+						input.cannon_loaded = true;
+					}
+				);
+				this.cannonball5.addEventListener(
+					'collision',
+					function( collided_with, linearVelocity, angularVelocity ) {
+						scene.remove( this );
+						input.cannon_loaded = true;
+					}
+				);
+				this.cannonball6.addEventListener(
+					'collision',
+					function( collided_with, linearVelocity, angularVelocity ) {
+						scene.remove( this );
+						input.cannon_loaded = true;
+					}
+				);
+				// calculate force vector, add cannonball to the scene and apply impulse with calculated cannon power
+				this.force_vector2 = new THREE.Vector3( -(1 + this.calculated_cannon_power), 1 + this.calculated_cannon_power, 0 ).applyMatrix4( this.rotation_matrix );
+				
+				this.force_vector2 = this.force_vector2.add( vehicle.mesh.getLinearVelocity().multiplyScalar( 0.1 ) );
+				scene.add( this.cannonball4 );
+				scene.add( this.cannonball5 );
+				scene.add( this.cannonball6 );
+				this.cannonball4.applyCentralImpulse( this.force_vector2 );
+				this.cannonball5.applyCentralImpulse( this.force_vector2 );
+				this.cannonball6.applyCentralImpulse( this.force_vector2 );
+
 				input.cannon_power = -1;
-				//force_vector = force_vector.add( vehicle.mesh.getLinearVelocity() );
-				scene.add( this.cannonball );
-				this.cannonball.applyCentralImpulse( this.force_vector );
 			}
 
 			//check if ship has enough health
 			if(input.health < 1){
 				scene.remove( vehicle );
+				input.cannon_loaded = false;
 				//todo: add wreck to scene
 			}
 
@@ -239,6 +352,7 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			}
 */
 			//if(vehicle) console.log("Ship velocity: " + vehicle.mesh.getLinearVelocity().length());		
+			 
 	}
 
 	function keyDown( keycode ){
