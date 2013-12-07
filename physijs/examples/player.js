@@ -5,7 +5,8 @@ var input1 = {
 	cannon_power: -1,
 	cannon: null,
 	cannon_loaded: true,
-	health: 100
+	health: 100,
+	dead: false
 };
 
 var input2 = {
@@ -15,7 +16,8 @@ var input2 = {
 	cannon_power: -1,
 	cannon: null,
 	cannon_loaded: true,
-	health: 100
+	health: 100,
+	dead: false
 };
 
 
@@ -68,7 +70,7 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			vehicle.mesh.addEventListener(
 				'collision',
 				function( collided_with, linearVelocity, angularVelocity ) {
-					if ( collided_with instanceof Physijs.SphereMesh ) input.health -= 5;
+					if ( collided_with instanceof Physijs.SphereMesh ) input.health -= 30;
 				}
 			);
 			scene.add( vehicle );
@@ -321,11 +323,12 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			if(input.health < 1){
 				scene.remove( vehicle );
 				input.cannon_loaded = false;
+				input.dead = true;
 				//todo: add wreck to scene
 			}
 
 			//progress bar for testing
-			//document.getElementById("progress_bar").value = input.cannon_power.toString();
+			
 
 			// Limit the maximum velocity of the vehicle
 			//limitVelocity(vehicle.mesh ,maxVelocity);
