@@ -1,11 +1,13 @@
 var vars1 = {
 	health: 100,
-	fortMesh: null
+	fortMesh: null,
+	dead: false
 };
 
 var vars2 = {
 	health: 100,
-	fortMesh: null
+	fortMesh: null,
+	dead: false
 };
 
 function Base(posX, posY, posZ, rot, bID, scene, vars) {
@@ -54,7 +56,7 @@ function Base(posX, posY, posZ, rot, bID, scene, vars) {
 	    vars.fortMesh.addEventListener(
 			'collision',
 			function( collided_with, linearVelocity, angularVelocity ) {
-				if ( collided_with instanceof Physijs.SphereMesh ) vars.health -= 100;
+				if ( collided_with instanceof Physijs.SphereMesh ) vars.health -= 5;
 			}
 		);
 
@@ -77,6 +79,7 @@ function Base(posX, posY, posZ, rot, bID, scene, vars) {
 		//check if base has enough health
 		if(vars.health < 1 && vars.fortMesh != null){
 			scene.remove( vars.fortMesh );
+			vars.dead = true;
 			//todo: add wreck to scene
 		}
 		
