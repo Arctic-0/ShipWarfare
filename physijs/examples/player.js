@@ -20,7 +20,6 @@ var input2 = {
 	dead: false
 };
 
-
 function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 
 	this.vehicle_body = null;
@@ -322,9 +321,7 @@ function Player(posX,posY,posZ,rotY, pID, scene, input, vehicle) {
 			//check if ship has enough health
 			if(input.health < 1){
 				scene.remove( vehicle );
-				input.cannon_loaded = false;
 				input.dead = true;
-				//todo: add wreck to scene
 			}
 
 			//progress bar for testing
