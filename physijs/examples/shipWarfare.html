@@ -26,8 +26,36 @@
 		#baseHealth2 {
 			font-size: 24px;
 			position: fixed;
+			margin-right: 185px;
 			display: inline-block;
 			right: 10px;
+		}
+
+		#shipHealth1 {
+			font-size: 20px;
+			position: fixed;
+			margin-left: 220px;
+			margin-top: 3px;
+			display: inline-block;
+		}
+
+		#shipHealth2 {
+			font-size: 20px;
+			position: fixed;
+			margin-top: 3px;
+			display: inline-block;
+			right: 10px;
+		}
+
+		#objecive {
+			font-size: 24px;
+			color: red;
+			position: fixed;
+			display: inline-block;
+			margin-left: -150px;
+			left: 50%;
+			right: 50%;
+			width: 90%;
 		}
 
 		#progress_bar1 {
@@ -54,7 +82,7 @@
 			visibility: hidden;
 		}
 
-		#healthTxt1, #healthTxt2 {
+		#healthTxt1, #healthTxt2, #healthTxt3, #healthTxt4 {
 			font-weight: bold;
 		}
 
@@ -150,6 +178,8 @@
 				// Update the GUI
 				$("#healthTxt1").text(vars1.health);
 				$("#healthTxt2").text(vars2.health);
+				$("#healthTxt3").text(input1.health);
+				$("#healthTxt4").text(input2.health);
 				document.getElementById("progress_bar1").value = input1.cannon_power.toString();
 				document.getElementById("progress_bar2").value = input2.cannon_power.toString();
 
@@ -324,6 +354,9 @@
 <body>
 	<div id="baseHealth1">Base Health: <span id="healthTxt1">100</span></div>
 	<div id="baseHealth2">Base Health: <span id="healthTxt2">100</span></div>
+	<div id="objecive">Destroy opponent's base!</div>
+	<div id="shipHealth1">Ship Health: <span id="healthTxt3">100</span></div>
+	<div id="shipHealth2">Ship Health: <span id="healthTxt4">100</span></div>
 	<progress id="progress_bar1" value="0" min="0" max="20"></progress> 
 	<progress id="progress_bar2" value="0" min="0" max="20"></progress> 
 	<div id="p1Won">Player 1 won!</div>
