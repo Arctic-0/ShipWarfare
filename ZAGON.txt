@@ -1,0 +1,5 @@
+Igra se požene kot spletna stran v datoteki "game/shipWarfare". Je pa potrebno zagnati na serverju, zaradi nalaganja datotek. Poleg je tudi datoteka "startPythonServer" ki zažene server z rootom v tej mapi. Testirala sva vedno v Chromu.
+
+Kontrole:
+P1: WASD, Space
+P2: Up,Down,Left,Right, L
